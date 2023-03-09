@@ -14,9 +14,9 @@ class ImageDataset(Dataset):
     def __init__(self, root, unaligned=False, mode='train'):
         self.unaligned = unaligned
 
-        self.files_A = sorted(glob.glob(os.path.join(root, '%s/train_A' % mode) + '/*.*'))
-        self.files_B = sorted(glob.glob(os.path.join(root, '%s/train_D' % mode) + '/*.*'))
-        self.files_C = sorted(glob.glob(os.path.join(root, '%s/train_M' % mode) + '/*.*'))
+        self.files_A = sorted(glob.glob(os.path.join(root, '%s/*_A.png' % mode)))
+        self.files_B = sorted(glob.glob(os.path.join(root, '%s/*_D.png' % mode)))
+        self.files_C = sorted(glob.glob(os.path.join(root, '%s/*_T.png' % mode)))
 
     def __getitem__(self, index):
         i = random.randint(0, 48)

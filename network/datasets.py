@@ -15,9 +15,9 @@ class ImageDataset(Dataset):
         self.unaligned = unaligned
 
         # 将目录下相匹配的文件放入列表中，os.path.join 路径拼接函数
-        self.files_A = sorted(glob.glob(os.path.join(root, '%s/train_A' % mode) + '/*.*'))
-        self.files_B = sorted(glob.glob(os.path.join(root, '%s/train_D' % mode) + '/*.*'))
-        self.files_C = sorted(glob.glob(os.path.join(root, '%s/train_M' % mode) + '/*.*'))
+        self.files_A = sorted(glob.glob(os.path.join(root, '%s/*_A.png' % mode)))
+        self.files_B = sorted(glob.glob(os.path.join(root, '%s/*_D.png' % mode)))
+        self.files_C = sorted(glob.glob(os.path.join(root, '%s/*_T.png' % mode)))
 
     def __getitem__(self, index):
         i = random.randint(0, 48)
@@ -83,7 +83,7 @@ class ImageDataset(Dataset):
         item_C = item_C.view(400, 400, 1)
         item_C = item_C.transpose(0, 1).transpose(0, 2).contiguous()
 
-        return {'A': item_A, 'B': item_B, 'C': item_C}
+        return {'A': item_A, 'B': item_B, 'C': item_C,'AL':item_A_l,'BL':item_B_l}
 
     def __len__(self):
         return max(len(self.files_A), len(self.files_B))
