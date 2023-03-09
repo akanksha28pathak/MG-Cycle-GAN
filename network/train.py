@@ -3,6 +3,7 @@ import os
 import argparse
 import itertools
 import sys
+import datetime
 
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
@@ -37,7 +38,7 @@ def main(argv=None):
     parser.add_argument('--iter_loss', type=int, default=100, help='average loss for n iterations')
     opt = parser.parse_args()
 
-    opt.dataroot = 'SHIQ'
+    opt.dataroot = '../SHIQ_data_10825'
 
     print(torch.cuda.device_count())
     if not os.path.exists('model'):
@@ -46,13 +47,14 @@ def main(argv=None):
 
     if torch.cuda.is_available():
         opt.cuda = True
+        print('device exists')
 
     print(opt)
 
     ###### Definition of variables ######
     # Networks
-    netG_A2B = Generator_H2F.from_file('model/netG_A2B.pth')  # highlight to highlight_free
-    netG_B2A = Generator_F2H.from_file('model/netG_B2A.pth')  # highlight_free to highlight
+    netG_A2B = Generator_H2F.from_file('model_l/netG_A2B.pth')  # highlight to highlight_free
+    netG_B2A = Generator_F2H.from_file('model_l/netG_B2A.pth')  # highlight_free to highlight
     netD_A = Discriminator()
     netD_B = Discriminator()
 
@@ -92,6 +94,7 @@ def main(argv=None):
     input_B = Tensor(opt.batchSize, 3, opt.size, opt.size)
     input_A_L = Tensor(opt.batchSize, 1, opt.size, opt.size)
     input_B_L = Tensor(opt.batchSize, 1, opt.size, opt.size)
+    input_C = Tensor(opt.batchSize, 1, opt.size, opt.size)
     target_real = Variable(Tensor(opt.batchSize).fill_(1.0), requires_grad=False)
     target_fake = Variable(Tensor(opt.batchSize).fill_(0.0), requires_grad=False)
     mask_non_highlight = Variable(Tensor(opt.batchSize, 1, opt.size, opt.size).fill_(-1.0),
@@ -128,24 +131,29 @@ def main(argv=None):
             real_B = Variable(input_B.copy_(batch['B']))
             real_A_L = Variable(input_A_L.copy_(batch['AL']))
             real_B_L = Variable(input_B_L.copy_(batch['BL']))
+            real_C = Variable(input_C.copy_(batch['C']))
 
             ###### Generators A2B and B2A ######
             optimizer_G.zero_grad()
 
             # Identity loss
             # G_A2B(B) should equal B if real B is fed
-            same_B, _ = netG_A2B(real_B, real_B_L)
+            same_B, _ = netG_A2B(real_B, real_B_L, mask_non_highlight, mask_non_highlight)
             loss_identity_B = criterion_identity(same_B, real_B) * 5.0  # ||Gb(b)-b||1
             # G_B2A(A) should equal A if real A is fed, so the mask should be all zeros
             same_A, _ = netG_B2A(real_A, real_A_L, mask_non_highlight, mask_non_highlight)
             loss_identity_A = criterion_identity(same_A, real_A) * 5.0  # ||Ga(a)-a||1
 
             # GAN loss
-            fake_B, fake_B_L = netG_A2B(real_A, real_A_L)
+
+            
+            #Highlight to highlight free ABA
+            fake_B, fake_B_L = netG_A2B(real_A, real_A_L, real_C, real_C)
             pred_fake = netD_B(fake_B)
             loss_GAN_A2B = criterion_GAN(pred_fake, target_real)  # log(Db(Gb(a)))
-
             mask_queue.insert(mask_generator(real_A, fake_B), mask_generator_lab(real_A_L, fake_B_L))
+
+            #Highlight free to highlight BAB
             mask, mask_L = mask_queue.rand_item()
             fake_A, fake_A_L = netG_B2A(real_B, real_B_L, mask, mask_L)
             pred_fake = netD_A(fake_A)
@@ -156,7 +164,7 @@ def main(argv=None):
             recovered_A, _ = netG_B2A(fake_B, fake_B_L, cmask, cmask_L)  # real highlight, false highlight free
             loss_cycle_ABA = criterion_cycle(recovered_A, real_A) * 10.0  # ||Ga(Gb(a))-a||1
 
-            recovered_B, _ = netG_A2B(fake_A, fake_A_L)
+            recovered_B, _ = netG_A2B(fake_A, fake_A_L, mask, mask_L)
             loss_cycle_BAB = criterion_cycle(recovered_B, real_B) * 10.0  # ||Gb(Ga(b))-b||1
 
             # Colour loss
@@ -267,7 +275,8 @@ def main(argv=None):
             torch.save(netD_A.state_dict(), ('model/netD_A_%d.pth' % (epoch + 1)))
             torch.save(netD_B.state_dict(), ('model/netD_B_%d.pth' % (epoch + 1)))
 
-        print('Epoch:{}'.format(epoch))
+        d = datetime.datetime.now()
+        print('Epoch:{} Completed at {}'.format(epoch,d))
 
 
 if __name__ == '__main__':
