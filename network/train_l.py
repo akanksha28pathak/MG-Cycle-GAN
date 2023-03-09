@@ -14,7 +14,6 @@ from utils import QueueMask
 from model_l import Generator_F2H, Generator_H2F, Discriminator
 from datasets_l import ImageDataset
 import sys
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as io
 
@@ -41,7 +40,7 @@ def main(argv=None):
     # 读取命令行参数
     opt = parser.parse_args()
 
-    opt.dataroot = 'SHIQ_data'
+    opt.dataroot = '../SHIQ_data_10825'
 
     if not os.path.exists('model_l'):
         os.mkdir('model_l')
@@ -213,45 +212,46 @@ def main(argv=None):
 
                 curr_iter += 1
 
-                if (i + 1) % iter_loss == 0:
+                if (i + 1) % opt.iter_loss == 0:
                     log = 'Epoch: %d, [iter %d], [loss_G %.5f], [loss_G_identity %.5f], [loss_G_GAN %.5f],' \
                           '[loss_G_cycle %.5f], [loss_D %.5f]' % \
                           (epoch, curr_iter, loss_G, (loss_identity_A + loss_identity_B), (loss_GAN_A2B + loss_GAN_B2A),
                            (loss_cycle_ABA + loss_cycle_BAB), (loss_D_A + loss_D_B))
                     print(log)
-                    open(log_path, 'a').write(log + '\n')
+                    open(opt.log_path, 'a').write(log + '\n')
 
-                    G_losses.append(G_losses_temp / iter_loss)
-                    D_A_losses.append(D_A_losses_temp / iter_loss)
-                    D_B_losses.append(D_B_losses_temp / iter_loss)
+                    G_losses.append(G_losses_temp / opt.iter_loss)
+                    D_A_losses.append(D_A_losses_temp / opt.iter_loss)
+                    D_B_losses.append(D_B_losses_temp / opt.iter_loss)
                     G_losses_temp = 0
                     D_A_losses_temp = 0
                     D_B_losses_temp = 0
 
                     avg_log = '[the last %d iters], [loss_G %.5f], [D_A_losses %.5f], [D_B_losses %.5f],' \
-                              % (iter_loss, G_losses[G_losses.__len__() - 1], D_A_losses[D_A_losses.__len__() - 1], \
+                              % (opt.iter_loss, G_losses[G_losses.__len__() - 1], D_A_losses[D_A_losses.__len__() - 1], \
                                  D_B_losses[D_B_losses.__len__() - 1])
                     print(avg_log)
-                    open(log_path, 'a').write(avg_log + '\n')
+                    open(opt.log_path, 'a').write(avg_log + '\n')
 
-            # Update learning rates
-            lr_scheduler_G.step()
-            lr_scheduler_D_A.step()
-            lr_scheduler_D_B.step()
+        # Update learning rates
+        lr_scheduler_G.step()
+        lr_scheduler_D_A.step()
+        lr_scheduler_D_B.step()
 
-            # Save models checkpoints
-            torch.save(netG_A2B.state_dict(), 'model_l/netG_A2B.pth')
-            torch.save(netG_B2A.state_dict(), 'model_l/netG_B2A.pth')
-            torch.save(netD_A.state_dict(), 'model_l/netD_A.pth')
-            torch.save(netD_B.state_dict(), 'model_l/netD_B.pth')
+        # Save models checkpoints
+        torch.save(netG_A2B.state_dict(), 'model_l/netG_A2B.pth')
+        torch.save(netG_B2A.state_dict(), 'model_l/netG_B2A.pth')
+        torch.save(netD_A.state_dict(), 'model_l/netD_A.pth')
+        torch.save(netD_B.state_dict(), 'model_l/netD_B.pth')
 
-            if (epoch + 1) % snapshot_epochs == 0:
-                torch.save(netG_A2B.state_dict(), ('model_l/netG_A2B_%d.pth' % (epoch + 1)))
-                torch.save(netG_B2A.state_dict(), ('model_l/netG_B2A_%d.pth' % (epoch + 1)))
-                torch.save(netD_A.state_dict(), ('model_l/netD_A_%d.pth' % (epoch + 1)))
-                torch.save(netD_B.state_dict(), ('model_l/netD_B_%d.pth' % (epoch + 1)))
+        if (epoch + 1) % opt.snapshot_epochs == 0:
+            torch.save(netG_A2B.state_dict(), ('model_l/netG_A2B_%d.pth' % (epoch + 1)))
+            torch.save(netG_B2A.state_dict(), ('model_l/netG_B2A_%d.pth' % (epoch + 1)))
+            torch.save(netD_A.state_dict(), ('model_l/netD_A_%d.pth' % (epoch + 1)))
+            torch.save(netD_B.state_dict(), ('model_l/netD_B_%d.pth' % (epoch + 1)))
 
-            print('Epoch:{}'.format(epoch))
+        d= datetime.datetime.now()
+        print('Epoch:{} Completed at {}'.format(epoch,d))
 
 
 if __name__ == '__main__':
