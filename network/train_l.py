@@ -20,7 +20,7 @@ import scipy.io as io
 
 def main(argv=None):
     print(torch.cuda.is_available())
-    os.environ["CUDA_VISIBLE_DEVICES"] = "4"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     # 用来解析命令行参数  首先声明一个parser
     parser = argparse.ArgumentParser()
     # 添加参数
@@ -40,7 +40,7 @@ def main(argv=None):
     # 读取命令行参数
     opt = parser.parse_args()
 
-    opt.dataroot = '../SHIQ_data_10825'
+    opt.dataroot = r'C:\Users\FAKANKS\OneDrive - Emory University\Learning_pytorch\MG-Cycle-GAN\SHIQ_data_10825'
 
     if not os.path.exists('model_l'):
         os.mkdir('model_l')

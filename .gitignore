@@ -1,1 +1,5 @@
 SHIQ_data_10825/
+model_l/log.txt
+network/__pycache__/datasets_l.cpython-39.pyc
+network/__pycache__/model_l.cpython-39.pyc
+network/__pycache__/utils.cpython-39.pyc
